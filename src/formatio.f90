@@ -27,7 +27,10 @@ module formatio
    !! @note The module is not yet complete.  Reading .mat files is not yet implemented. 
    !! moreover, the module supports only double precision arrays.
    !!
-
+   !! 
+   !! @note File file structure follows the MATLAB 5.0 MAT-file format
+   !! see https://www.mathworks.com/help/pdf_doc/matlab/matfile_format.pdf
+   
    implicit none
    private
 
