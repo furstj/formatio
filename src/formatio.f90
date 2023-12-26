@@ -130,6 +130,7 @@ contains
       character(len=*), intent(in) :: name
       integer, parameter :: SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2
       integer(int64) :: fpos, dsize
+      integer :: ftell
 
       write(mf%unit) 14_int32, 0_int32
       fpos = ftell(mf%unit)
