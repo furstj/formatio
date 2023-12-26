@@ -1,7 +1,7 @@
 module formatio
 
    !! formatio
-   !!   
+   !!
    !! This module provides a simple interface to write MATLAB .mat files.
    !! It is not intended to be a complete implementation of the .mat file
    !! format, but rather a simple way to write data from Fortran to MATLAB.
@@ -24,13 +24,13 @@ module formatio
    !!   call mf%write('x', x)
    !!   call mf%close()
    !!
-   !! @note The module is not yet complete.  Reading .mat files is not yet implemented. 
+   !! @note The module is not yet complete.  Reading .mat files is not yet implemented.
    !! moreover, the module supports only double precision arrays.
    !!
-   !! 
+   !!
    !! @note File file structure follows the MATLAB 5.0 MAT-file format
    !! see https://www.mathworks.com/help/pdf_doc/matlab/matfile_format.pdf
-   
+
    implicit none
    private
 
@@ -123,17 +123,33 @@ contains
    end subroutine write_file_header
 
 
+   function padded(l)
+      integer, intent(in) :: l
+      integer :: padded
+      padded = 8*( (l + 7) / 8 )
+   end function padded
+
+
    subroutine write_real64(mf, name, x)
       use iso_fortran_env, only: real64, int32, int64
       class(matfile), intent(in)   :: mf
       real(real64), intent(in)     :: x(..)
       character(len=*), intent(in) :: name
-      integer, parameter :: SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2
-      integer(int64) :: fpos, dsize
-      integer :: ftell
+      integer :: dsize
+      !integer, parameter :: SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2
+      !integer :: pos1, pos2, dsize, p1, p2
+      !integer :: ftell
 
-      write(mf%unit) 14_int32, 0_int32
-      fpos = ftell(mf%unit)
+      dsize = 8 + 8 + &                  ! for array flags
+         8 + padded(len(name)) + &       ! for name
+         8 + padded(size(x)*8)           ! for data
+      if (rank(x) == 0) then
+         dsize = dsize + 8 + padded(4)          ! for scalar
+      else
+         dsize = dsize + 8 + padded(4*rank(x))  ! for dimensions
+      end if
+
+      write(mf%unit) 14_int32, int(dsize, int32)
 
       write(mf%unit) 6_int32, 8_int32    ! Array flags
       write(mf%unit) 6_int32, 1_int32    ! Array flags
@@ -141,15 +157,10 @@ contains
       if (rank(x) == 0) then
          call write_entry_int32(mf%unit, [1])
       else
-         call write_entry_int32(mf%unit, shape(x))   
+         call write_entry_int32(mf%unit, shape(x))
       end if
       call write_entry_string(mf%unit, name)
       call write_entry_real64(mf%unit, x)
-
-      dsize = ftell(mf%unit) - fpos
-      call fseek(mf%unit, fpos-4, SEEK_SET)
-      write(mf%unit) int(dsize, int32)
-      call fseek(mf%unit, 0, SEEK_END)
 
    end subroutine write_real64
 
