@@ -104,15 +104,16 @@ contains
       type(matfile), intent(in) :: mf
       character(len=*), intent(in), optional :: description
       character(len=116) :: text
-      character(len=30) :: date
+      character(len=10) :: date, time
 
-      call ctime(time(), date)
+      call date_and_time(date=date, time=time)
 
+      
       if (present(description)) then
-         text = 'MATLAB 5.0 MAT-file, Platform: LINUX64, Created on: ' // date // &
+         text = 'MATLAB 5.0 MAT-file, Platform: LINUX64, Created on: ' // date // time //&
             ' ' // description
       else
-         text = 'MATLAB 5.0 MAT-file, Platform: LINUX64, Created on: ' // date // &
+         text = 'MATLAB 5.0 MAT-file, Platform: LINUX64, Created on: ' // date // time //&
             ' formatio'
       end if
       write(mf%unit) text
