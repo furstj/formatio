@@ -20,7 +20,7 @@ Example:
 
     real*8, dimension(10) :: x
     x = 1.0
-    mf = matfile('test.mat', 'write')
+    call mf%open('test.mat', 'write')
     call mf%write('x', x)
     call mf%close()
  
