@@ -20,7 +20,7 @@ module formatio
    !!   type(matfile) :: mf
    !!   real*8, dimension(10) :: x
    !!   x = 1.0
-   !!   mf = matfile('test.mat', 'write')
+   !!   call mf%open('test.mat', 'write')
    !!   call mf%write('x', x)
    !!   call mf%close()
    !!
@@ -34,35 +34,28 @@ module formatio
    implicit none
    private
 
-   type :: matfile
+   type, public :: matfile
       integer                       :: unit = -1      !! file unit
       character(len=:), allocatable :: action         !! 'read' or 'write'
    contains
+      procedure :: open  => open_matfile
+      procedure :: close => close_matfile
       procedure, private :: write_real64
       generic   :: write => write_real64
-      procedure :: close => close_matfile
-      final     :: finalize_matfile
+      final :: finalize_matfile
    end type matfile
-
-
-   interface matfile
-      procedure :: open_matfile
-   end interface matfile
-
-
-   public :: matfile
 
 
 contains
 
 
-   function open_matfile(filename, action, description) result(mf)
+   subroutine open_matfile(mf, filename, action, description)
       use iso_fortran_env, only: int32, int16
-      character(len=*), intent(in) :: filename               !! file name
-      character(len=*), intent(in) :: action                 !! 'read' or 'write'
+      class(matfile), intent(inout) :: mf
+      character(len=*), intent(in)  :: filename               !! file name
+      character(len=*), intent(in)  :: action                 !! 'read' or 'write'
       character(len=*), intent(in), optional :: description  !! file description
-      type(matfile) :: mf
-
+      
       select case (action)
        case('read','READ','r','R')
          mf%action = 'read'
@@ -73,7 +66,6 @@ contains
          error stop 'matfile: unknown action '// action
       end select
 
-
       open(newunit=mf%unit, file=filename, action=mf%action, form='unformatted', &
          access='stream')
 
@@ -81,7 +73,7 @@ contains
          call write_file_header(mf, description)
       end if
 
-   end function open_matfile
+   end subroutine open_matfile
 
 
    subroutine close_matfile(mf)
@@ -95,20 +87,20 @@ contains
    subroutine finalize_matfile(mf)
       use iso_fortran_env, only: int32
       type(matfile), intent(inout) :: mf
-      call mf%close
+      call mf%close()
    end subroutine finalize_matfile
 
 
    subroutine write_file_header(mf, description)
       use iso_fortran_env, only: int32, int16
-      type(matfile), intent(in) :: mf
+      type(matfile), intent(in)              :: mf
       character(len=*), intent(in), optional :: description
       character(len=116) :: text
       character(len=10) :: date, time
 
       call date_and_time(date=date, time=time)
 
-      
+
       if (present(description)) then
          text = 'MATLAB 5.0 MAT-file, Platform: LINUX64, Created on: ' // date // time //&
             ' ' // description
@@ -137,9 +129,6 @@ contains
       real(real64), intent(in)     :: x(..)
       character(len=*), intent(in) :: name
       integer :: dsize
-      !integer, parameter :: SEEK_SET = 0, SEEK_CUR = 1, SEEK_END = 2
-      !integer :: pos1, pos2, dsize, p1, p2
-      !integer :: ftell
 
       dsize = 8 + 8 + &                  ! for array flags
          8 + padded(len(name)) + &       ! for name
