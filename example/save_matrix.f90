@@ -1,5 +1,7 @@
 program formatio_ex_save_matrix
 
+   !! Creates a file with single matrix
+
    use iso_fortran_env, only: real64
    use formatio
 
